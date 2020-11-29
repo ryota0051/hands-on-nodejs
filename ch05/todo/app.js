@@ -2,7 +2,7 @@
 
 const express = require("express");
 
-const todos = [
+let todos = [
   { id: 1, title: "ネーム", completed: false },
   { id: 2, title: "下書き", completed: true },
 ];
@@ -28,6 +28,34 @@ app.get("/api/todos", (req, res, next) => {
     return next(err);
   }
   res.json(todos.filter((todo) => todo.completed === completed));
+});
+
+app.use("/api/todos/:id(\\d+)", (req, res, next) => {
+  const targetID = Number(req.params.id);
+  const todo = todos.find((todo) => todo.id === targetID);
+  if (!todo) {
+    const err = new Error("id not found");
+    err.statusCode = 404;
+    return next(err);
+  }
+  req.todo = todo;
+  next();
+});
+
+app
+  .route("/api/todos/:id(\\d+)/completed")
+  .put((req, res) => {
+    req.todo.completed = true;
+    res.status(200).json(req.todo);
+  })
+  .delete((req, res) => {
+    req.todo.completed = false;
+    res.status(200).json(req.todo);
+  });
+
+app.delete("/api/todos/:id(\\d+)", (req, res) => {
+  todos = todos.filter((todo) => todo.id !== req.todo.id);
+  res.status(204).end();
 });
 
 let id = 2;
